@@ -1,14 +1,12 @@
 FROM alpine:latest as builder
 
 ARG NSD_VERSION=4.9.1
-ARG GPG_FINGERPRINT="EE353E7D9F5299FEA8B33AB75B10751F1CD4BB2C"
 ARG SHA256_HASH="a6c23a53ee8111fa71e77b7565d1b8f486ea695770816585fbddf14e4367e6df"
 
 
 RUN apk add --no-cache \
       bash \
       curl \
-      gnupg \
       build-base \
       libevent-dev \
       openssl-dev \
@@ -18,20 +16,10 @@ SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 
 WORKDIR /tmp
 RUN \
-   curl -OO https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz{,.asc} && \
-   echo "Verifying authenticity of nsd-${NSD_VERSION}.tar.gz..." && \
+   curl -OO https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz && \
+   echo "Verifying SHA256 of nsd-${NSD_VERSION}.tar.gz..." && \
    CHECKSUM=$(sha256sum nsd-${NSD_VERSION}.tar.gz | awk '{print $1}') && \
-   if [ "${CHECKSUM}" != "${SHA256_HASH}" ]; then echo "ERROR: Checksum does not match!" && exit 1; fi && \
-   ( \
-      gpg --keyserver keyserver.ubuntu.com --recv-keys ${GPG_FINGERPRINT} || \
-      gpg --keyserver keyserver.pgp.com --recv-keys ${GPG_FINGERPRINT} || \
-      gpg --keyserver pgp.mit.edu --recv-keys ${GPG_FINGERPRINT} \
-   ) && \
-   FINGERPRINT="$(LANG=C gpg --verify nsd-${NSD_VERSION}.tar.gz.asc nsd-${NSD_VERSION}.tar.gz 2>&1 \
-                | sed -n 's#^Primary key fingerprint: \(.*\)#\1#p' | tr -d '[:space:]')" && \
-   if [ -z "${FINGERPRINT}" ]; then echo "ERROR: Invalid GPG signature!" && exit 1; fi && \
-   if [ "${FINGERPRINT}" != "${GPG_FINGERPRINT}" ]; then echo "ERROR: Wrong GPG fingerprint!" && exit 1; fi && \
-   echo "SHA256 and GPG signature are correct"
+   if [ "${CHECKSUM}" == "${SHA256_HASH}" ]; then echo "SHA256 is correct"; else echo "ERROR: SHA256 does not match!" && exit 1; fi
 
 RUN echo "Extracting nsd-${NSD_VERSION}.tar.gz..." && \
     tar -xzf "nsd-${NSD_VERSION}.tar.gz"
