@@ -172,5 +172,4 @@ docker-compose restart nsd
 Build-time variables:
 
 - **NSD_VERSION** : version of NSD
-- **GPG_FINGERPRINT** : fingerprint of signing key
 - **SHA256_HASH** : SHA256 hash of NSD archive
